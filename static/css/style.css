@@ -1,0 +1,29 @@
+<style>
+    /* Efeito de Pulso para o Botão */
+    .animate-pulse-dk {
+        animation: pulse-dk 2s infinite;
+    }
+    @keyframes pulse-dk {
+        0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); 
+        }
+        50% {
+            transform: scale(1.02); 
+            box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); 
+        }
+    }
+
+    /* Animação para o ícone de futebol */
+    .icon-spin-slow {
+        animation: spin-slow 3s linear infinite;
+    }
+    @keyframes spin-slow {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
