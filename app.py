@@ -4,7 +4,8 @@ import mercadopago
 import json
 import traceback
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
-from datetime import datetime
+from datetime import datetime, timezone # << MODIFICADO: Adicionado timezone
+import pytz # << NOVO: Adicionado pytz
 from dotenv import load_dotenv
 
 # Carrega variáveis do arquivo .env (se existir)
@@ -60,6 +61,55 @@ def init_db():
         db.commit()
         print("Banco de dados inicializado ou já existente.")
 
+# --- Filtro Jinja2 para Fuso Horário ---
+def format_datetime_local(value, tz_name='America/Sao_Paulo', fmt='%d/%m/%Y %H:%M:%S'):
+    """
+    Converte uma string de data/hora (assumida como UTC) ou um objeto datetime
+    para um fuso horário local e formata.
+    Lembre-se de ajustar 'America/Sao_Paulo' para o seu fuso horário.
+    """
+    if not value:
+        return ""
+
+    utc_dt = None
+    if isinstance(value, str):
+        try:
+            value_clean = value.split('.')[0] # Remove microssegundos se houver
+            if len(value_clean) == 19: # Formato 'YYYY-MM-DD HH:MM:SS'
+                 utc_dt = datetime.strptime(value_clean, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+            else: # Tenta um parse mais genérico
+                utc_dt = datetime.fromisoformat(value.replace('Z', '+00:00')).replace(tzinfo=timezone.utc)
+        except ValueError:
+            try: # Última tentativa para string
+                dt_naive = datetime.strptime(value_clean, '%Y-%m-%d %H:%M:%S')
+                utc_dt = dt_naive.replace(tzinfo=timezone.utc)
+            except ValueError:
+                print(f"Debug: Não foi possível parsear a string de data '{value}' para datetime UTC.")
+                return value
+    elif isinstance(value, datetime):
+        if value.tzinfo is None:
+            utc_dt = value.replace(tzinfo=timezone.utc)
+        else:
+            utc_dt = value.astimezone(timezone.utc)
+    else:
+        return value
+
+    if utc_dt:
+        try:
+            local_tz = pytz.timezone(tz_name)
+            local_dt = utc_dt.astimezone(local_tz)
+            return local_dt.strftime(fmt)
+        except pytz.exceptions.UnknownTimeZoneError:
+            print(f"Debug: Fuso horário desconhecido '{tz_name}'. Retornando UTC formatado.")
+            return utc_dt.strftime(fmt) + " (UTC - Erro Fuso)"
+        except Exception as e:
+            print(f"Debug: Erro ao converter fuso horário para '{tz_name}': {e}. Retornando UTC formatado.")
+            return utc_dt.strftime(fmt) + f" (UTC - Erro Conv: {e})"
+    return value
+
+app.jinja_env.filters['datetime_local'] = format_datetime_local
+# --- FIM Filtro Jinja2 ---
+
 # --- Rotas da Aplicação ---
 
 @app.route('/')
@@ -81,6 +131,7 @@ def create_preference():
     registration_id = None
 
     try:
+        # created_at será definido pelo DEFAULT CURRENT_TIMESTAMP do SQLite (provavelmente UTC)
         cursor.execute(
             "INSERT INTO registrations (name, whatsapp, email, payment_status) VALUES (?, ?, ?, ?)",
             (name, whatsapp, email, 'pending_creation')
@@ -147,10 +198,6 @@ def create_preference():
                 raise Exception(f"Chave 'response' não encontrada ou formato inválido na resposta da criação de preferência: {preference_response.get('response')}")
             
             preference_id_mp = preference_details.get('id')
-            
-            # ***** CORREÇÃO APLICADA AQUI *****
-            # Para credenciais de produção, pegamos 'init_point'.
-            # A API do MP retorna o init_point correto (produção ou sandbox) com base no Access Token usado.
             init_point_url = preference_details.get('init_point')
 
             if not preference_id_mp or not init_point_url:
@@ -228,7 +275,7 @@ def payment_feedback():
         elif status_arg == 'approved':
             cursor.execute(
                 "UPDATE registrations SET payment_id = ?, payment_status = ?, payment_approved_at = ? WHERE id = ?",
-                (payment_id_arg, 'approved', datetime.now(), registration_id)
+                (payment_id_arg, 'approved', datetime.now(timezone.utc), registration_id) # << MODIFICADO: Usando timezone.utc
             )
             db.commit()
             flash(f"Pagamento aprovado (ID: {payment_id_arg})! Em breve você receberá o link.", "success")
@@ -301,7 +348,7 @@ def webhook_mercadopago():
                 if payment_status_from_api == "approved":
                     cursor.execute(
                         "UPDATE registrations SET payment_id = ?, payment_status = ?, payment_approved_at = ? WHERE id = ?",
-                        (retrieved_payment_id_from_api, 'approved', datetime.now(), registration_id)
+                        (retrieved_payment_id_from_api, 'approved', datetime.now(timezone.utc), registration_id) # << MODIFICADO: Usando timezone.utc
                     )
                     db.commit()
                     print(f"Registro {registration_id} ATUALIZADO PARA APROVADO via webhook para pagamento {retrieved_payment_id_from_api}.")
