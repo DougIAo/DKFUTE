@@ -31,8 +31,8 @@ MP_ACCESS_TOKEN = os.getenv('MP_ACCESS_TOKEN_PROD')
 MP_PUBLIC_KEY = os.getenv('MP_PUBLIC_KEY_PROD')
 
 # Credenciais do Admin
-ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin') # Padrão 'admin' se não definido
-ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'senhaforte123') # Padrão 'senhaforte123' se não definido
+ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'DKFUTEADM') # Padrão 'admin' se não definido
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'kevAmor132@@@senhaA') # Padrão 'senhaforte123' se não definido
 
 if not MP_ACCESS_TOKEN or not MP_PUBLIC_KEY:
     raise ValueError("MP_ACCESS_TOKEN e MP_PUBLIC_KEY devem ser configurados nas variáveis de ambiente ou .env.")
