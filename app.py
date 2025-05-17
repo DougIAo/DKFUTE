@@ -8,20 +8,38 @@ from datetime import datetime, timezone
 import pytz
 from dotenv import load_dotenv
 
+# Carrega variáveis do arquivo .env (se existir)
+# Certifique-se de que seu .env tem:
+# FLASK_SECRET_KEY=sua_chave_super_secreta
+# MP_ACCESS_TOKEN_PROD=seu_access_token_de_producao
+# MP_PUBLIC_KEY_PROD=sua_public_key_de_producao
+# ADMIN_USERNAME=seu_admin_user
+# ADMIN_PASSWORD=sua_admin_senha
+# APP_BASE_URL=https://sua_url_do_render.onrender.com (PARA DEPLOY NO RENDER)
+# ou APP_BASE_URL=https://sua_url_do_ngrok.ngrok-free.app (PARA TESTE LOCAL COM NGROK)
 load_dotenv()
-app = Flask(__name__)
-app.secret_key = os.getenv('FLASK_SECRET_KEY', 'uma_chave_secreta_bem_aleatoria_para_testes_dhgsfdyg')
 
-DATABASE = 'database.db'
+app = Flask(__name__)
+app.secret_key = os.getenv('FLASK_SECRET_KEY')
+if not app.secret_key:
+    raise ValueError("FLASK_SECRET_KEY não configurada. Verifique suas variáveis de ambiente ou .env.")
+
+DATABASE = 'database.db' # O SQLite será criado na raiz do projeto
+
+# Credenciais do Mercado Pago
 MP_ACCESS_TOKEN = os.getenv('MP_ACCESS_TOKEN_PROD')
 MP_PUBLIC_KEY = os.getenv('MP_PUBLIC_KEY_PROD')
-ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
-ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'senhaforte123')
+
+# Credenciais do Admin
+ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin') # Padrão 'admin' se não definido
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'senhaforte123') # Padrão 'senhaforte123' se não definido
 
 if not MP_ACCESS_TOKEN or not MP_PUBLIC_KEY:
     raise ValueError("MP_ACCESS_TOKEN e MP_PUBLIC_KEY devem ser configurados nas variáveis de ambiente ou .env.")
 sdk = mercadopago.SDK(MP_ACCESS_TOKEN)
 
+
+# --- Funções do Banco de Dados ---
 def get_db():
     db = sqlite3.connect(DATABASE)
     db.row_factory = sqlite3.Row
@@ -49,6 +67,7 @@ def init_db():
         db.commit()
         print("Banco de dados inicializado ou já existente.")
 
+# --- Filtro Jinja2 e Função Auxiliar para Fuso Horário ---
 def format_datetime_local(value, tz_name='America/Sao_Paulo', fmt='%d/%m/%Y %H:%M:%S'):
     if value == "now":
         now_utc = datetime.now(timezone.utc)
@@ -56,27 +75,50 @@ def format_datetime_local(value, tz_name='America/Sao_Paulo', fmt='%d/%m/%Y %H:%
             local_tz = pytz.timezone(tz_name)
             local_now = now_utc.astimezone(local_tz)
             return local_now.strftime(fmt)
-        except Exception as e: return now_utc.strftime(fmt) + " (UTC)"
+        except Exception as e:
+            print(f"DEBUG: Erro ao formatar 'now' para fuso {tz_name}: {e}")
+            return now_utc.strftime(fmt) + " (UTC)"
+
     if not value: return ""
     utc_dt = None
     if isinstance(value, str):
         try:
             value_clean = value.split('.')[0]
-            if len(value_clean) == 19: utc_dt = datetime.strptime(value_clean, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
-            else: utc_dt = datetime.fromisoformat(value.replace('Z', '+00:00')).replace(tzinfo=timezone.utc)
+            if len(value_clean) == 19: # Formato YYYY-MM-DD HH:MM:SS
+                 utc_dt = datetime.strptime(value_clean, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+            else: # Tenta ISO format
+                utc_dt = datetime.fromisoformat(value.replace('Z', '+00:00')).replace(tzinfo=timezone.utc)
         except ValueError:
-            try: dt_naive = datetime.strptime(value_clean, '%Y-%m-%d %H:%M:%S'); utc_dt = dt_naive.replace(tzinfo=timezone.utc)
-            except ValueError: return value
+            try: # Fallback para string
+                dt_naive = datetime.strptime(value_clean, '%Y-%m-%d %H:%M:%S')
+                utc_dt = dt_naive.replace(tzinfo=timezone.utc)
+            except ValueError:
+                print(f"DEBUG: Não foi possível parsear a string de data '{value}'")
+                return value
     elif isinstance(value, datetime):
-        utc_dt = value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)
-    else: return value
+        if value.tzinfo is None:
+            utc_dt = value.replace(tzinfo=timezone.utc)
+        else:
+            utc_dt = value.astimezone(timezone.utc)
+    else:
+        return value
+
     if utc_dt:
-        try: local_tz = pytz.timezone(tz_name); local_dt = utc_dt.astimezone(local_tz); return local_dt.strftime(fmt)
-        except pytz.exceptions.UnknownTimeZoneError: return utc_dt.strftime(fmt) + " (UTC-Fuso?)"
-        except Exception: return utc_dt.strftime(fmt) + " (UTC-Conv?)"
+        try:
+            local_tz = pytz.timezone(tz_name)
+            local_dt = utc_dt.astimezone(local_tz)
+            return local_dt.strftime(fmt)
+        except pytz.exceptions.UnknownTimeZoneError:
+            print(f"DEBUG: Fuso horário desconhecido '{tz_name}'")
+            return utc_dt.strftime(fmt) + " (UTC-Fuso?)"
+        except Exception as e:
+            print(f"DEBUG: Erro ao converter fuso: {e}")
+            return utc_dt.strftime(fmt) + " (UTC-Conv?)"
     return value
 app.jinja_env.filters['datetime_local'] = format_datetime_local
+# --- FIM Filtro Jinja2 ---
 
+# --- Rotas da Aplicação ---
 @app.route('/')
 def index():
     return render_template('index.html', mp_public_key=MP_PUBLIC_KEY)
@@ -103,11 +145,14 @@ def create_preference():
         )
         db.commit()
         registration_id = cursor.lastrowid
-        print(f"Novo registro ID: {registration_id} para {name}, time: {time_torce}, email usuário: {email_usuario}")
+        print(f"LOG: Novo registro ID: {registration_id} para {name}, time: {time_torce}, email: {email_usuario}")
 
-        # <<< URL DO NGROK ATUALIZADA DIRETAMENTE NO CÓDIGO >>>
-        NGROK_BASE_URL = "https://32ab-190-102-47-31.ngrok-free.app"
-        # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        APP_BASE_URL = os.getenv("APP_BASE_URL")
+        if not APP_BASE_URL:
+            print("LOG CRÍTICO: APP_BASE_URL não está definida nas variáveis de ambiente ou .env! Webhooks e Back URLs não funcionarão para o Mercado Pago.")
+            # Para desenvolvimento local sem ngrok REAL para webhooks, você poderia comentar a linha abaixo e os webhooks não funcionariam.
+            # Em produção no Render, esta variável DEVE ser a URL pública do Render.
+            return jsonify({'error': 'Configuração crítica do servidor ausente (APP_BASE_URL). O pagamento não pode prosseguir.'}), 500
 
         clean_whatsapp = "".join(filter(str.isdigit, whatsapp))
         phone_details = {}
@@ -115,111 +160,165 @@ def create_preference():
             phone_details["area_code"] = clean_whatsapp[:2]
             phone_details["number"] = clean_whatsapp[2:]
         
-        payer_email_para_mp = email_usuario if email_usuario else f"user_{registration_id}@dkfute.com" # Use um domínio seu aqui se tiver
+        payer_email_para_mp = email_usuario if email_usuario and "@" in email_usuario else f"user_{registration_id}@dkfute.com" # Garante um email válido
 
         preference_data = {
             "items": [{"title": "Acesso à Transmissão de Futebol", "quantity": 1, "unit_price": 3.00, "currency_id": "BRL"}],
-            "payer": {
-                "name": name,
-                "phone": phone_details if phone_details else None,
-                "email": payer_email_para_mp
-            },
+            "payer": {"name": name, "phone": phone_details if phone_details else None, "email": payer_email_para_mp},
             "back_urls": {
-                "success": f"{NGROK_BASE_URL}{url_for('payment_feedback')}",
-                "failure": f"{NGROK_BASE_URL}{url_for('payment_feedback')}",
-                "pending": f"{NGROK_BASE_URL}{url_for('payment_feedback')}"
+                "success": f"{APP_BASE_URL}{url_for('payment_feedback')}",
+                "failure": f"{APP_BASE_URL}{url_for('payment_feedback')}",
+                "pending": f"{APP_BASE_URL}{url_for('payment_feedback')}"
             },
-            "notification_url": f"{NGROK_BASE_URL}{url_for('webhook_mercadopago')}",
+            "notification_url": f"{APP_BASE_URL}{url_for('webhook_mercadopago')}",
             "external_reference": str(registration_id)
         }
         if not preference_data["payer"]["phone"]: del preference_data["payer"]["phone"]
         
-        print(f"--- DADOS ENVIADOS PARA CRIAR PREFERÊNCIA (NGROK: {NGROK_BASE_URL}) ---")
-        print(json.dumps(preference_data, indent=2, ensure_ascii=False))
-
+        print(f"LOG: Dados para MP (Base URL: {APP_BASE_URL}): {json.dumps(preference_data, indent=2, ensure_ascii=False)}")
         preference_response = sdk.preference().create(preference_data)
         
-        print("--- RESPOSTA DA API DO MERCADO PAGO (Criação Preferência) ---")
-        print(json.dumps(preference_response, indent=2, ensure_ascii=False))
+        print(f"LOG: Resposta MP (Criação Preferência): {json.dumps(preference_response, indent=2, ensure_ascii=False)}")
         if not preference_response or preference_response.get("status") not in [200, 201]:
             error_details = preference_response.get("response", {}) if isinstance(preference_response, dict) else {}
-            error_message = error_details.get("message", "Erro desconhecido MP.")
-            if isinstance(error_details.get("cause"), list) and error_details.get("cause"):
-                 error_message += " Causa: " + str(error_details.get("cause")[0].get("description",""))
+            error_message = error_details.get("message", "Erro desconhecido ao criar preferência no MP.")
+            causes = error_details.get("cause", [])
+            if not causes and isinstance(error_details.get("causes"), list): causes = error_details.get("causes") # MP às vezes usa 'causes'
+            if causes and isinstance(causes, list) and len(causes) > 0 and isinstance(causes[0], dict):
+                 error_message += " Causa: " + causes[0].get("description", str(causes[0]))
+
+            print(f"LOG ERRO MP: {error_message} | Resposta completa: {json.dumps(preference_response, indent=2, ensure_ascii=False)}")
             raise Exception(f"Erro API MP: {error_message}")
+        
         preference_details = preference_response.get("response")
         preference_id_mp = preference_details.get('id')
         init_point_url = preference_details.get('init_point')
         if not preference_id_mp or not init_point_url:
-            raise Exception("ID ou init_point não encontrados na resposta MP.")
+            raise Exception("ID da preferência ou init_point não encontrados na resposta do MP.")
+
         cursor.execute("UPDATE registrations SET preference_id = ?, payment_status = ? WHERE id = ?",
                        (preference_id_mp, 'pending_payment', registration_id)); db.commit()
+        print(f"LOG: Preferência {preference_id_mp} criada para registro {registration_id}.")
         return jsonify({'checkout_url': init_point_url, 'registration_id': registration_id})
 
     except Exception as e:
+        print(f"LOG ERRO GERAL em /create_preference para reg_id {registration_id}:")
         traceback.print_exc()
-        if registration_id:
-             try: cursor.execute("DELETE FROM registrations WHERE id = ?", (registration_id,)); db.commit()
-             except: pass
-        return jsonify({'error': str(e)}), 500
+        if registration_id: # Tenta deletar o registro se a preferência falhou
+             try: 
+                 cursor.execute("DELETE FROM registrations WHERE id = ?", (registration_id,)); 
+                 db.commit()
+                 print(f"LOG: Registro {registration_id} deletado devido à falha na criação da preferência.")
+             except Exception as db_err:
+                 print(f"LOG: Erro ao tentar deletar registro {registration_id}: {db_err}")
+        return jsonify({'error': f"Ocorreu um erro interno: {str(e)}"}), 500
 
-# --- Rotas de Feedback, Webhook e Admin (sem alterações) ---
+
 @app.route('/payment_feedback')
 def payment_feedback():
     payment_id_arg = request.args.get('payment_id'); status_arg = request.args.get('status')
     external_reference_arg = request.args.get('external_reference')
+    print(f"LOG: Payment Feedback Recebido - Args: {request.args}")
     if not status_arg or not external_reference_arg:
-        flash("Feedback incompleto.", "warning"); return redirect(url_for('index'))
+        flash("Informações de feedback de pagamento incompletas.", "warning"); return redirect(url_for('index'))
     try:
         registration_id = int(external_reference_arg); db = get_db(); cursor = db.cursor()
         current_reg = cursor.execute("SELECT payment_status FROM registrations WHERE id = ?", (registration_id,)).fetchone()
-        if current_reg and current_reg['payment_status'] == 'approved': flash("Pagamento já confirmado!", "info")
+        
+        if current_reg and current_reg['payment_status'] == 'approved':
+            print(f"LOG: Feedback para reg {registration_id} já aprovado. Nada a fazer.")
+            flash("Seu pagamento já foi confirmado!", "info")
         elif status_arg == 'approved':
             cursor.execute("UPDATE registrations SET payment_id = ?, payment_status = ?, payment_approved_at = ? WHERE id = ?",
                            (payment_id_arg, 'approved', datetime.now(timezone.utc), registration_id)); db.commit()
-            flash("Pagamento aprovado!", "success")
-        else:
-            cursor.execute("UPDATE registrations SET payment_id = ?, payment_status = ? WHERE id = ?",
+            print(f"LOG: Reg {registration_id} atualizado para APROVADO via feedback.")
+            flash("Pagamento aprovado! Em breve você receberá o link.", "success")
+        elif status_arg == 'pending':
+            cursor.execute("UPDATE registrations SET payment_id = ?, payment_status = ? WHERE id = ? AND (payment_status != 'approved' OR payment_status IS NULL)",
+                           (payment_id_arg, 'pending_confirmation', registration_id)); db.commit()
+            print(f"LOG: Reg {registration_id} atualizado para PENDENTE via feedback.")
+            flash(f"Seu pagamento (ID: {payment_id_arg}) está pendente de confirmação.", "info")
+        else: # rejected, cancelled, failure, etc.
+            cursor.execute("UPDATE registrations SET payment_id = ?, payment_status = ? WHERE id = ? AND (payment_status != 'approved' OR payment_status IS NULL)",
                            (payment_id_arg, status_arg, registration_id)); db.commit()
-            flash(f"Status do pagamento: {status_arg}.", "info" if status_arg == 'pending' else "danger")
-    except Exception as e: traceback.print_exc(); flash("Erro ao processar feedback.", "danger")
+            print(f"LOG: Reg {registration_id} atualizado para status '{status_arg}' via feedback.")
+            flash(f"Ocorreu um problema com seu pagamento (Status: {status_arg}). Tente novamente ou contate o suporte.", "danger")
+    except ValueError:
+        flash("Referência externa inválida no feedback de pagamento.", "danger")
+    except Exception as e:
+        print(f"LOG ERRO em /payment_feedback:")
+        traceback.print_exc()
+        flash("Ocorreu um erro ao processar o retorno do seu pagamento.", "danger")
     return redirect(url_for('index'))
 
 @app.route('/webhook_mercadopago', methods=['POST'])
 def webhook_mercadopago():
     data = request.get_json()
+    print(f"LOG: Webhook Recebido - Dados: {json.dumps(data, indent=2, ensure_ascii=False)}")
     if data and data.get("type") == "payment":
         payment_data_id = str(data.get("data", {}).get("id"))
-        if not payment_data_id: return jsonify({'status': 'error', 'message': 'Payment ID não encontrado'}), 400
+        if not payment_data_id:
+            print("LOG Webhook: 'data.id' (payment_id) não encontrado.")
+            return jsonify({'status': 'error', 'message': 'Payment ID (data.id) não encontrado'}), 400
         try:
-            payment_info = sdk.payment().get(payment_data_id)
-            if not payment_info or payment_info.get("status") not in [200, 201]:
-                return jsonify({'status': 'error', 'message': 'Falha ao obter info do pagamento MP'}), 500
-            details = payment_info.get("response"); ext_ref = details.get("external_reference")
-            status_api = details.get("status"); pay_id_api = str(details.get("id"))
-            if ext_ref and status_api and pay_id_api:
-                reg_id = int(ext_ref); db = get_db(); cursor = db.cursor()
-                if status_api == "approved":
+            print(f"LOG Webhook: Consultando pagamento ID: {payment_data_id} na API MP...")
+            payment_info_response = sdk.payment().get(payment_data_id)
+            print(f"LOG Webhook: Resposta Consulta Pagamento - {json.dumps(payment_info_response, indent=2, ensure_ascii=False)}")
+
+            if not payment_info_response or payment_info_response.get("status") not in [200, 201]:
+                error_msg = payment_info_response.get("response", {}).get("message", "Falha ao obter informações do pagamento via API")
+                print(f"LOG Webhook ERRO: Falha ao obter info do pagamento {payment_data_id}. Status API: {payment_info_response.get('status')}. Msg: {error_msg}")
+                return jsonify({'status': 'error', 'message': f'Falha ao obter info do pagamento da API MP: {error_msg}'}), 500
+
+            payment_details = payment_info_response.get("response")
+            if not payment_details or not isinstance(payment_details, dict):
+                 print(f"LOG Webhook ERRO: 'response' não encontrado ou formato inválido na consulta do pagamento {payment_data_id}")
+                 return jsonify({'status': 'error', 'message': 'Formato de resposta da info do pagamento MP inválido'}), 500
+
+            external_reference = payment_details.get("external_reference")
+            payment_status_from_api = payment_details.get("status")
+            retrieved_payment_id_from_api = str(payment_details.get("id"))
+
+            if external_reference and payment_status_from_api and retrieved_payment_id_from_api:
+                registration_id = int(external_reference)
+                db = get_db(); cursor = db.cursor()
+                current_reg = cursor.execute("SELECT payment_status FROM registrations WHERE id = ?", (registration_id,)).fetchone()
+
+                # Evitar sobrescrever um status já aprovado por um webhook posterior com status diferente (raro, mas possível)
+                if current_reg and current_reg['payment_status'] == 'approved' and payment_status_from_api != 'approved':
+                    print(f"LOG Webhook: Reg {registration_id} já está aprovado. Ignorando atualização para '{payment_status_from_api}'.")
+                elif payment_status_from_api == "approved":
                     cursor.execute("UPDATE registrations SET payment_id = ?, payment_status = ?, payment_approved_at = ? WHERE id = ?",
-                                   (pay_id_api, 'approved', datetime.now(timezone.utc), reg_id))
+                                   (retrieved_payment_id_from_api, 'approved', datetime.now(timezone.utc), registration_id))
+                    db.commit()
+                    print(f"LOG Webhook: Reg {registration_id} atualizado para APROVADO para pagamento {retrieved_payment_id_from_api}.")
                 else:
                     cursor.execute("UPDATE registrations SET payment_id = ?, payment_status = ? WHERE id = ? AND (payment_status != 'approved' OR payment_status IS NULL)",
-                                   (pay_id_api, status_api, reg_id))
-                db.commit()
-        except Exception as e: traceback.print_exc(); return jsonify({'status': 'error', 'message': str(e)}), 500
+                                   (retrieved_payment_id_from_api, payment_status_from_api, registration_id))
+                    db.commit()
+                    print(f"LOG Webhook: Reg {registration_id} atualizado para status '{payment_status_from_api}' para pagamento {retrieved_payment_id_from_api}.")
+            else:
+                print(f"LOG Webhook ERRO: Dados incompletos na consulta do pagamento. ExtRef: {external_reference}, Status API: {payment_status_from_api}, PayID API: {retrieved_payment_id_from_api}")
+        except Exception as e:
+            print(f"LOG ERRO CRÍTICO ao processar webhook para pagamento {payment_data_id}:")
+            traceback.print_exc()
+            return jsonify({'status': 'error', 'message': f"Erro interno no webhook: {str(e)}"}), 500
     return jsonify({'status': 'received'}), 200
 
+# --- Rotas do Admin ---
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
-        if request.form['username'] == ADMIN_USERNAME and request.form['password'] == ADMIN_PASSWORD:
-            session['admin_logged_in'] = True; flash('Login sucesso!', 'success'); return redirect(url_for('admin_dashboard'))
-        else: flash('Login inválido.', 'danger')
+        username = request.form.get('username')
+        password = request.form.get('password')
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            session['admin_logged_in'] = True; flash('Login realizado com sucesso!', 'success'); return redirect(url_for('admin_dashboard'))
+        else: flash('Usuário ou senha inválidos.', 'danger')
     return render_template('login.html')
 
 @app.route('/admin/logout')
 def admin_logout():
-    session.pop('admin_logged_in', None); flash('Logout sucesso.', 'info'); return redirect(url_for('admin_login'))
+    session.pop('admin_logged_in', None); flash('Logout realizado com sucesso.', 'info'); return redirect(url_for('admin_login'))
 
 @app.route('/admin')
 def admin_dashboard():
@@ -249,10 +348,15 @@ def send_link_action(registration_id):
     db = get_db(); cursor = db.cursor()
     reg_info = cursor.execute("SELECT whatsapp, payment_status FROM registrations WHERE id = ?", (registration_id,)).fetchone()
     if not reg_info: return jsonify({'success': False, 'error': 'Registro não encontrado'}), 404
+    # Adicionar verificação se pagamento está aprovado antes de enviar link
+    if reg_info['payment_status'] != 'approved':
+        return jsonify({'success': False, 'error': 'Pagamento não aprovado para este registro.'}), 403
+        
     cursor.execute("UPDATE registrations SET link_sent = 1 WHERE id = ?", (registration_id,)); db.commit()
+    print(f"LOG: Link marcado como enviado para registro {registration_id}")
     return jsonify({'success': True, 'whatsapp': reg_info['whatsapp']})
 
 
 if __name__ == '__main__':
-    init_db()
+    init_db() # Garante que a tabela existe ao iniciar
     app.run(debug=True, port=5000)
