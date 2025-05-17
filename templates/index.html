@@ -35,7 +35,6 @@
             <p class="mt-1 text-xs text-slate-500">Essa informação é obrigatória.</p>
         </div>
 
-        {# === CAMPO DE E-MAIL ADICIONADO DE VOLTA === #}
         <div>
             <label for="email" class="block text-sm font-medium text-slate-700 mb-1">E-mail (Opcional):</label>
             <input type="email" id="email" name="email"
@@ -43,7 +42,6 @@
                    placeholder="seuemail@exemplo.com">
             <p class="mt-1 text-xs text-slate-500">Para confirmações e contato.</p>
         </div>
-        {# === FIM DO CAMPO DE E-MAIL === #}
 
         <button type="submit" id="submitButton"
                 class="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-md text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
@@ -52,18 +50,100 @@
         </button>
     </form>
 
+    {# === MENSAGEM IMPORTANTE DESTACADA === #}
     <div class="mt-6 text-center">
-        <p class="text-xs text-slate-600 bg-blue-50 p-3 rounded-md border border-blue-200">
-            <i class="fas fa-info-circle mr-1 text-blue-500"></i>
-            Assim que o Mercado Pago confirmar seu pagamento, o link para a transmissão será enviado para o número de WhatsApp cadastrado.
-        </p>
+        <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-md shadow" role="alert">
+            <div class="flex items-center">
+                <div class="py-1">
+                    <i class="fas fa-bell text-xl mr-3"></i>
+                </div>
+                <div>
+                    <p class="font-semibold text-sm">Atenção:</p>
+                    <p class="text-xs sm:text-sm">
+                        Assim que o Mercado Pago confirmar seu pagamento, o link para a transmissão será enviado para o número de WhatsApp cadastrado.
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
+    {# === FIM DA MENSAGEM IMPORTANTE === #}
+
     <div id="paymentStatus" class="mt-4 text-center text-sm"></div>
+
+    {# === SEÇÃO DE AVALIAÇÕES === #}
+    <div class="mt-10 pt-6 border-t border-slate-200">
+        <h2 class="text-xl font-bold font-poppins text-slate-700 text-center mb-5">Nossos Clientes Satisfeitos</h2>
+        
+        <div class="space-y-4"> 
+            
+            <!-- Avaliação Fictícia 1 -->
+            <div class="bg-sky-50 p-4 rounded-xl shadow-lg border-l-4 border-sky-500">
+                <div class="flex items-center mb-2"> 
+                    <i class="fas fa-user-circle text-3xl text-sky-600 mr-2"></i>
+                    <div>
+                        <h4 class="font-semibold text-slate-800 text-sm">Carlos A.</h4>
+                        <p class="text-xs text-slate-500">Torcedor do Palmeiras</p>
+                    </div>
+                </div>
+                <blockquote class="mb-2"> 
+                    <p class="text-slate-700 text-sm leading-relaxed italic"> 
+                        <span class="text-xl text-sky-600 font-serif leading-none mr-1">“</span>Qualidade ótima e preço justo. Vi o jogo do Verdão sem travar. Recomendo!<span class="text-xl text-sky-600 font-serif leading-none ml-1">”</span>
+                    </p>
+                </blockquote>
+                <div class="flex items-center text-yellow-400 text-xs"> 
+                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                    <span class="ml-1.5 text-xs text-slate-600 font-medium">(4.9/5)</span> 
+                </div>
+            </div>
+
+            <!-- Avaliação Fictícia 2 -->
+            <div class="bg-emerald-50 p-4 rounded-xl shadow-lg border-l-4 border-emerald-500">
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-user-circle text-3xl text-emerald-600 mr-2"></i>
+                    <div>
+                        <h4 class="font-semibold text-slate-800 text-sm">Mariana L.</h4>
+                        <p class="text-xs text-slate-500">Torcedora do Flamengo</p>
+                    </div>
+                </div>
+                <blockquote class="mb-2">
+                    <p class="text-slate-700 text-sm leading-relaxed italic">
+                        <span class="text-xl text-emerald-600 font-serif leading-none mr-1">“</span>Fácil de comprar e acesso imediato. Perfeito para não perder nenhum lance do Mengão!<span class="text-xl text-emerald-600 font-serif leading-none ml-1">”</span>
+                    </p>
+                </blockquote>
+                <div class="flex items-center text-yellow-400 text-xs">
+                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                    <span class="ml-1.5 text-xs text-slate-600 font-medium">(5.0/5)</span>
+                </div>
+            </div>
+
+            <!-- Avaliação Fictícia 3 -->
+            <div class="bg-violet-50 p-4 rounded-xl shadow-lg border-l-4 border-violet-500">
+                <div class="flex items-center mb-2">
+                     <i class="fas fa-user-circle text-3xl text-violet-600 mr-2"></i>
+                    <div>
+                        <h4 class="font-semibold text-slate-800 text-sm">Fernando C.</h4>
+                        <p class="text-xs text-slate-500">Torcedor do Corinthians</p>
+                    </div>
+                </div>
+                <blockquote class="mb-2">
+                    <p class="text-slate-700 text-sm leading-relaxed italic">
+                        <span class="text-xl text-violet-600 font-serif leading-none mr-1">“</span>Plataforma show! Atendimento rápido e eficiente. Valeu cada centavo pra ver o Timão!<span class="text-xl text-violet-600 font-serif leading-none ml-1">”</span>
+                    </p>
+                </blockquote>
+                <div class="flex items-center text-yellow-400 text-xs">
+                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i>
+                    <span class="ml-1.5 text-xs text-slate-600 font-medium">(4.0/5)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {# === FIM DA SEÇÃO DE AVALIAÇÕES === #}
 </div>
 {% endblock %}
 
 {% block scripts_extra %}
 <script>
+    // ... (seu JavaScript existente para o formulário, sem alterações) ...
     const registrationForm = document.getElementById('registrationForm');
     const submitButton = document.getElementById('submitButton');
     const paymentStatusDiv = document.getElementById('paymentStatus');
@@ -78,13 +158,12 @@
         const name = document.getElementById('name').value.trim();
         const whatsapp = document.getElementById('whatsapp').value.trim();
         const time_torce = document.getElementById('time_torce').value.trim();
-        const email = document.getElementById('email').value.trim(); // << NOVO: Obtendo email
+        const email = document.getElementById('email').value.trim();
 
         let errors = [];
         if (!name) errors.push("Nome");
         if (!whatsapp) errors.push("WhatsApp");
         if (!time_torce) errors.push("Time que torce");
-        // Email não é validado como obrigatório aqui no JS, pois é opcional
 
         if (errors.length > 0) {
             paymentStatusDiv.innerHTML = `<p class="text-red-500 p-3 bg-red-100 rounded-md">Por favor, preencha: ${errors.join(', ')}.</p>`;
@@ -97,7 +176,6 @@
             const response = await fetch("{{ url_for('create_preference') }}", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                // << MODIFICADO: Enviando email também
                 body: JSON.stringify({ name, whatsapp, time_torce, email })
             });
 
