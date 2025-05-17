@@ -9,6 +9,12 @@
             <h1 class="text-xl sm:text-3xl font-bold font-poppins text-slate-700">Painel Administrativo</h1>
             <p class="text-sm text-slate-500 mt-1">Gerencie cadastros e pagamentos.</p>
         </div>
+        {# <<< NOVO BOTÃO DE DOWNLOAD AQUI >>> #}
+        <a href="{{ url_for('download_registrations_csv') }}" 
+           class="mt-4 sm:mt-0 px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 shadow-sm transition duration-150 text-sm font-medium">
+            <i class="fas fa-download mr-2"></i> Baixar Lista (CSV)
+        </a>
+        {# <<< FIM DO NOVO BOTÃO >>> #}
     </div>
 
     <h2 class="text-lg sm:text-xl font-semibold font-poppins text-slate-700 mb-5">
@@ -22,7 +28,7 @@
                 <col style="width: 15%;"> {# Nome #}
                 <col style="width: 13%;"> {# WhatsApp #}
                 <col style="width: 12%;"> {# Time #}
-                <col style="width: 15%;"> {# Email << NOVA COLUNA #}
+                <col style="width: 15%;"> {# Email #}
                 <col style="width: 10%;"> {# Status Pag. #}
                 <col style="width: 8%;">  {# ID Pag. #}
                 <col style="width: 12%;"> {# Data #}
@@ -35,7 +41,7 @@
                     <th class="px-3 py-3 text-left text-2xs sm:text-xs font-semibold text-slate-500 uppercase tracking-wider">Nome</th>
                     <th class="px-3 py-3 text-left text-2xs sm:text-xs font-semibold text-slate-500 uppercase tracking-wider">WhatsApp</th>
                     <th class="px-3 py-3 text-left text-2xs sm:text-xs font-semibold text-slate-500 uppercase tracking-wider">Time</th>
-                    <th class="px-3 py-3 text-left text-2xs sm:text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th> {# << NOVO HEADER #}
+                    <th class="px-3 py-3 text-left text-2xs sm:text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
                     <th class="px-3 py-3 text-left text-2xs sm:text-xs font-semibold text-slate-500 uppercase tracking-wider">Status Pag.</th>
                     <th class="px-3 py-3 text-left text-2xs sm:text-xs font-semibold text-slate-500 uppercase tracking-wider">ID Pag.</th>
                     <th class="px-3 py-3 text-left text-2xs sm:text-xs font-semibold text-slate-500 uppercase tracking-wider">Data</th>
@@ -52,7 +58,7 @@
                         <td class="px-3 py-3 text-xs sm:text-sm font-medium text-slate-800 break-words">{{ reg.name }}</td>
                         <td class="px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-slate-600">{{ reg.whatsapp }}</td>
                         <td class="px-3 py-3 text-xs sm:text-sm text-slate-600 break-words">{{ reg.time_torce }}</td>
-                        <td class="px-3 py-3 text-xs sm:text-sm text-slate-600 break-all" title="{{ reg.email }}">{{ reg.email if reg.email else 'N/A' }}</td> {# << NOVO DADO #}
+                        <td class="px-3 py-3 text-xs sm:text-sm text-slate-600 break-all" title="{{ reg.email }}">{{ reg.email if reg.email else 'N/A' }}</td>
                         <td class="px-3 py-3 whitespace-nowrap">
                             <span class="px-2 py-1 inline-flex text-2xs sm:text-xs leading-5 font-semibold rounded-full 
                                          {% if reg.payment_status == 'approved' %} bg-green-100 text-green-800 
@@ -82,7 +88,7 @@
             </tbody>
         </table>
     </div>
-    <div id="noRegistrationsMessage" class="text-center py-10 {% if registrations %}hidden{% endif %}"> {# Esconde se houver renderização inicial #}
+    <div id="noRegistrationsMessage" class="text-center py-10 {% if registrations %}hidden{% endif %}">
         <i class="fas fa-folder-open text-4xl text-slate-400 mb-3"></i>
         <p class="text-slate-500 font-medium">Nenhum cadastro encontrado.</p>
         <p class="text-xs text-slate-400 mt-1">Aguardando novos registros ou atualizações...</p>
@@ -90,32 +96,25 @@
 </div>
 
 <!-- Modal para inserir link (sem alterações) -->
-{# ... (código do modal como antes) ... #}
 <div id="linkModal" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true"><div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"><div class="fixed inset-0 bg-slate-800 bg-opacity-75 transition-opacity" aria-hidden="true"></div><span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">​</span><div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"><div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4"><div class="sm:flex sm:items-start"><div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10"><i class="fas fa-link text-xl text-blue-600"></i></div><div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full"><h3 class="text-lg leading-6 font-medium font-poppins text-slate-900" id="modal-title">Enviar Link da Transmissão</h3><div class="mt-4"><label for="streamLinkInput" class="block text-sm font-medium text-slate-700">Link da Transmissão:</label><input type="url" id="streamLinkInput" placeholder="https://seu-link-de-transmissao.com/jogo" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><p class="mt-2 text-xs text-slate-500">Este link será usado para montar a mensagem do WhatsApp.</p></div></div></div></div><div class="bg-slate-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse"><button type="button" id="confirmSendLinkBtn" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm"> <i class="fab fa-whatsapp mr-2"></i>Abrir WhatsApp</button><button type="button" id="cancelSendLinkBtn" class="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">Cancelar</button></div></div></div></div>
-
 {% endblock %}
 
 {% block scripts_extra %}
 <script src="{{ url_for('static', filename='js/admin_script.js') }}"></script>
-
+{# Script de polling da tabela (como antes) #}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const registrationsTableBody = document.querySelector('#registrationsTable tbody');
         const noRegistrationsMessageDiv = document.getElementById('noRegistrationsMessage');
-        const pollingInterval = 15000;
+        const pollingInterval = 15000; 
         let lastDataSignature = "";
         let pollingTimer;
 
         async function fetchAndUpdateRegistrations() {
-            if (!registrationsTableBody) {
-                if(pollingTimer) clearInterval(pollingTimer); return;
-            }
+            if (!registrationsTableBody) { if(pollingTimer) clearInterval(pollingTimer); return; }
             try {
                 const response = await fetch("{{ url_for('admin_get_registrations_data') }}");
-                if (!response.ok) {
-                    if (response.status === 401 && pollingTimer) clearInterval(pollingTimer);
-                    return;
-                }
+                if (!response.ok) { if (response.status === 401 && pollingTimer) clearInterval(pollingTimer); return; }
                 const data = await response.json();
                 const currentDataSignature = JSON.stringify(data.registrations.map(r => `${r.id}-${r.payment_status}-${r.link_sent}`));
                 if (currentDataSignature === lastDataSignature) return;
@@ -126,47 +125,34 @@
                     if(noRegistrationsMessageDiv) noRegistrationsMessageDiv.classList.add('hidden');
                     data.registrations.forEach(reg => {
                         const row = registrationsTableBody.insertRow();
-                        row.id = `reg-row-${reg.id}`;
-                        row.className = "hover:bg-slate-50 transition-colors duration-150";
-
-                        // <<< ATUALIZADO PARA INCLUIR EMAIL NA RECONSTRUÇÃO DA TABELA PELO JS >>>
+                        row.id = `reg-row-${reg.id}`; row.className = "hover:bg-slate-50";
                         row.insertCell().outerHTML = `<td class="px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-slate-500">#${reg.id}</td>`;
                         row.insertCell().outerHTML = `<td class="px-3 py-3 text-xs sm:text-sm font-medium text-slate-800 break-words">${reg.name}</td>`;
                         row.insertCell().outerHTML = `<td class="px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-slate-600">${reg.whatsapp}</td>`;
                         row.insertCell().outerHTML = `<td class="px-3 py-3 text-xs sm:text-sm text-slate-600 break-words">${reg.time_torce}</td>`;
-                        row.insertCell().outerHTML = `<td class="px-3 py-3 text-xs sm:text-sm text-slate-600 break-all" title="${reg.email || ''}">${reg.email || 'N/A'}</td>`; // Exibe email
-                        
-                        let statusClass = 'bg-slate-100 text-slate-800';
-                        if (reg.payment_status === 'approved') statusClass = 'bg-green-100 text-green-800';
-                        else if (['pending', 'pending_confirmation', 'pending_payment', 'in_process'].includes(reg.payment_status)) statusClass = 'bg-yellow-100 text-yellow-800';
-                        else if (['rejected', 'cancelled', 'failure'].includes(reg.payment_status)) statusClass = 'bg-red-100 text-red-800';
-                        row.insertCell().outerHTML = `<td class="px-3 py-3 whitespace-nowrap"><span class="px-2 py-1 inline-flex text-2xs sm:text-xs leading-5 font-semibold rounded-full ${statusClass}">${(reg.payment_status || 'N/D').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span></td>`;
-                        
-                        const paymentIdDisplay = reg.payment_id ? (reg.payment_id.length > 8 ? reg.payment_id.substring(0, 8) + '...' : reg.payment_id) : 'N/A';
-                        row.insertCell().outerHTML = `<td class="px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-slate-500 truncate" title="${reg.payment_id || ''}">${paymentIdDisplay}</td>`;
-                        
-                        let dateDisplay = 'N/D';
-                        if (reg.payment_approved_at_formatted) dateDisplay = reg.payment_approved_at_formatted;
-                        else if (reg.created_at_formatted) dateDisplay = `${reg.created_at_formatted} (C)`;
-                        row.insertCell().outerHTML = `<td class="px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-slate-500">${dateDisplay}</td>`;
-
-                        let linkSentHtml = reg.link_sent ? '<span class="text-green-600 font-semibold"><i class="fas fa-check-circle sm:mr-1"></i> <span class="hidden sm:inline">Sim</span></span>' : '<span class="text-orange-500 font-semibold"><i class="fas fa-hourglass-half sm:mr-1"></i> <span class="hidden sm:inline">Não</span></span>';
-                        row.insertCell().outerHTML = `<td class="px-3 py-3 whitespace-nowrap text-xs sm:text-sm link-status-${reg.id}">${linkSentHtml}</td>`;
-
-                        let actionHtml = '<span class="text-slate-400 italic text-2xs sm:text-xs">Aguard. Aprov.</span>';
-                        if (reg.payment_status === 'approved') {
-                            const disabledAttr = reg.link_sent ? 'disabled' : '';
-                            const buttonText = reg.link_sent ? 'Reenviar' : 'Enviar';
-                            actionHtml = `<button onclick="sendLink(${reg.id}, '${reg.whatsapp}')" class="send-link-btn-${reg.id} text-blue-600 hover:text-blue-800 disabled:opacity-60 disabled:cursor-not-allowed" title="Enviar link" ${disabledAttr}><i class="fab fa-whatsapp fa-lg sm:mr-1"></i> <span class="hidden sm:inline">${buttonText}</span></button>`;
+                        row.insertCell().outerHTML = `<td class="px-3 py-3 text-xs sm:text-sm text-slate-600 break-all" title="${reg.email || ''}">${reg.email || 'N/A'}</td>`;
+                        let sClass = 'bg-slate-100 text-slate-800';
+                        if (reg.payment_status === 'approved') sClass = 'bg-green-100 text-green-800';
+                        else if (['pending','pending_confirmation','pending_payment','in_process'].includes(reg.payment_status)) sClass = 'bg-yellow-100 text-yellow-800';
+                        else if (['rejected','cancelled','failure'].includes(reg.payment_status)) sClass = 'bg-red-100 text-red-800';
+                        row.insertCell().outerHTML = `<td class="px-3 py-3 whitespace-nowrap"><span class="px-2 py-1 inline-flex text-2xs sm:text-xs leading-5 font-semibold rounded-full ${sClass}">${(reg.payment_status||'N/D').replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase())}</span></td>`;
+                        const pIdDisp = reg.payment_id ? (reg.payment_id.length > 8 ? reg.payment_id.substring(0,8)+'...' : reg.payment_id) : 'N/A';
+                        row.insertCell().outerHTML = `<td class="px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-slate-500 truncate" title="${reg.payment_id||''}">${pIdDisp}</td>`;
+                        let dDisp = 'N/D';
+                        if(reg.payment_approved_at_formatted) dDisp = reg.payment_approved_at_formatted;
+                        else if(reg.created_at_formatted) dDisp = `${reg.created_at_formatted} (C)`;
+                        row.insertCell().outerHTML = `<td class="px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-slate-500">${dDisp}</td>`;
+                        let lSent = reg.link_sent ? '<span class="text-green-600 font-semibold"><i class="fas fa-check-circle sm:mr-1"></i> <span class="hidden sm:inline">Sim</span></span>':'<span class="text-orange-500 font-semibold"><i class="fas fa-hourglass-half sm:mr-1"></i> <span class="hidden sm:inline">Não</span></span>';
+                        row.insertCell().outerHTML = `<td class="px-3 py-3 whitespace-nowrap text-xs sm:text-sm link-status-${reg.id}">${lSent}</td>`;
+                        let actHtml = '<span class="text-slate-400 italic text-2xs sm:text-xs">Aguard. Aprov.</span>';
+                        if(reg.payment_status==='approved'){
+                            const dis = reg.link_sent?'disabled':''; const btnTxt = reg.link_sent?'Reenviar':'Enviar';
+                            actHtml = `<button onclick="sendLink(${reg.id},'${reg.whatsapp}')" class="send-link-btn-${reg.id} text-blue-600 hover:text-blue-800 disabled:opacity-60 disabled:cursor-not-allowed" title="Enviar link" ${dis}><i class="fab fa-whatsapp fa-lg sm:mr-1"></i> <span class="hidden sm:inline">${btnTxt}</span></button>`;
                         }
-                        row.insertCell().outerHTML = `<td class="px-3 py-3 whitespace-nowrap text-xs sm:text-sm font-medium">${actionHtml}</td>`;
+                        row.insertCell().outerHTML = `<td class="px-3 py-3 whitespace-nowrap text-xs sm:text-sm font-medium">${actHtml}</td>`;
                     });
-                } else {
-                    if(noRegistrationsMessageDiv) noRegistrationsMessageDiv.classList.remove('hidden');
-                }
-            } catch (error) {
-                console.error("Falha ao atualizar cadastros:", error);
-            }
+                } else { if(noRegistrationsMessageDiv) noRegistrationsMessageDiv.classList.remove('hidden'); }
+            } catch (e) { console.error("Falha ao atualizar:", e); }
         }
         fetchAndUpdateRegistrations();
         pollingTimer = setInterval(fetchAndUpdateRegistrations, pollingInterval);
