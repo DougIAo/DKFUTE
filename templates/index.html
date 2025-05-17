@@ -2,11 +2,6 @@
 
 {% block title %}Compre sua Transmissão de Futebol{% endblock %}
 
-{% block head_extra %}
-    {# Não precisa mais do SDK do Mercado Pago no frontend para este método #}
-    {# <script src="https://sdk.mercadopago.com/js/v2"></script> #}
-{% endblock %}
-
 {% block content %}
 <div class="max-w-lg mx-auto bg-white p-8 sm:p-10 rounded-xl shadow-2xl">
     <header class="text-center mb-8">
@@ -33,12 +28,22 @@
         </div>
         
         <div>
+            <label for="time_torce" class="block text-sm font-medium text-slate-700 mb-1">Qual time você torce?</label>
+            <input type="text" id="time_torce" name="time_torce" required
+                   class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm placeholder-slate-400"
+                   placeholder="Ex: Flamengo, Corinthians, etc.">
+            <p class="mt-1 text-xs text-slate-500">Essa informação é obrigatória.</p>
+        </div>
+
+        {# === CAMPO DE E-MAIL ADICIONADO DE VOLTA === #}
+        <div>
             <label for="email" class="block text-sm font-medium text-slate-700 mb-1">E-mail (Opcional):</label>
             <input type="email" id="email" name="email"
                    class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm placeholder-slate-400"
                    placeholder="seuemail@exemplo.com">
-            <p class="mt-1 text-xs text-slate-500">Recomendado para receber confirmações.</p>
+            <p class="mt-1 text-xs text-slate-500">Para confirmações e contato.</p>
         </div>
+        {# === FIM DO CAMPO DE E-MAIL === #}
 
         <button type="submit" id="submitButton"
                 class="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-md text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
@@ -47,9 +52,13 @@
         </button>
     </form>
 
-    {# Não precisamos mais do container do Brick #}
-    {# <div id="payment-brick-container" class="mt-8"></div> #}
-    <div id="paymentStatus" class="mt-6 text-center text-sm"></div>
+    <div class="mt-6 text-center">
+        <p class="text-xs text-slate-600 bg-blue-50 p-3 rounded-md border border-blue-200">
+            <i class="fas fa-info-circle mr-1 text-blue-500"></i>
+            Assim que o Mercado Pago confirmar seu pagamento, o link para a transmissão será enviado para o número de WhatsApp cadastrado.
+        </p>
+    </div>
+    <div id="paymentStatus" class="mt-4 text-center text-sm"></div>
 </div>
 {% endblock %}
 
@@ -63,15 +72,22 @@
         event.preventDefault();
         const originalButtonText = submitButton.innerHTML;
         submitButton.disabled = true;
-        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Redirecionando para pagamento...';
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Redirecionando...';
         paymentStatusDiv.innerHTML = '';
 
-        const name = document.getElementById('name').value;
-        const whatsapp = document.getElementById('whatsapp').value;
-        const email = document.getElementById('email').value;
+        const name = document.getElementById('name').value.trim();
+        const whatsapp = document.getElementById('whatsapp').value.trim();
+        const time_torce = document.getElementById('time_torce').value.trim();
+        const email = document.getElementById('email').value.trim(); // << NOVO: Obtendo email
 
-        if (!name || !whatsapp) {
-            paymentStatusDiv.innerHTML = `<p class="text-red-500 p-3 bg-red-100 rounded-md">Por favor, preencha seu nome e WhatsApp.</p>`;
+        let errors = [];
+        if (!name) errors.push("Nome");
+        if (!whatsapp) errors.push("WhatsApp");
+        if (!time_torce) errors.push("Time que torce");
+        // Email não é validado como obrigatório aqui no JS, pois é opcional
+
+        if (errors.length > 0) {
+            paymentStatusDiv.innerHTML = `<p class="text-red-500 p-3 bg-red-100 rounded-md">Por favor, preencha: ${errors.join(', ')}.</p>`;
             submitButton.disabled = false;
             submitButton.innerHTML = originalButtonText;
             return;
@@ -81,26 +97,22 @@
             const response = await fetch("{{ url_for('create_preference') }}", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, whatsapp, email })
+                // << MODIFICADO: Enviando email também
+                body: JSON.stringify({ name, whatsapp, time_torce, email })
             });
 
+            const responseData = await response.json(); 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `Servidor retornou erro ${response.status}`);
+                throw new Error(responseData.error || `Servidor retornou erro ${response.status}`);
             }
-
-            const data = await response.json();
-            
-            if (data.checkout_url) {
-                // Redireciona o usuário para a URL de checkout do Mercado Pago
-                window.location.href = data.checkout_url;
+            if (responseData.checkout_url) {
+                window.location.href = responseData.checkout_url;
             } else {
                 throw new Error("URL de checkout não recebida do servidor.");
             }
-
         } catch (error) {
             console.error("Erro ao criar preferência ou redirecionar:", error);
-            paymentStatusDiv.innerHTML = `<p class="text-red-600 p-3 bg-red-100 rounded-md shadow">Erro ao iniciar pagamento: ${error.message}. Tente novamente.</p>`;
+            paymentStatusDiv.innerHTML = `<p class="text-red-600 p-3 bg-red-100 rounded-md shadow">Erro: ${error.message}. Tente novamente.</p>`;
             submitButton.disabled = false;
             submitButton.innerHTML = originalButtonText;
         }
