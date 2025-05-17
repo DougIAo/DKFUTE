@@ -1,3 +1,4 @@
 Flask
 mercadopago
 python-dotenv  # Para carregar .env se você usar
+gunicorn
