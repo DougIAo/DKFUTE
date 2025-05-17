@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Compre sua Transmissão de Futebol{% endblock %}
+
+{% block head_extra %}
+    {# Não precisa mais do SDK do Mercado Pago no frontend para este método #}
+    {# <script src="https://sdk.mercadopago.com/js/v2"></script> #}
+{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto bg-white p-8 sm:p-10 rounded-xl shadow-2xl">
+    <header class="text-center mb-8">
+        <i class="fas fa-tv text-5xl text-blue-600 mb-4"></i>
+        <h1 class="text-3xl sm:text-4xl font-bold font-poppins text-slate-700">Futebol Ao Vivo!</h1>
+        <p class="text-md sm:text-lg text-slate-500 mt-2">
+            Assista aos melhores jogos por apenas <span class="font-semibold text-green-600">R$ 3,00</span>!
+        </p>
+    </header>
+
+    <form id="registrationForm" class="space-y-6">
+        <div>
+            <label for="name" class="block text-sm font-medium text-slate-700 mb-1">Nome Completo:</label>
+            <input type="text" id="name" name="name" required
+                   class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm placeholder-slate-400"
+                   placeholder="Seu nome completo">
+        </div>
+
+        <div>
+            <label for="whatsapp" class="block text-sm font-medium text-slate-700 mb-1">Número do WhatsApp (com DDD):</label>
+            <input type="tel" id="whatsapp" name="whatsapp" required
+                   class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm placeholder-slate-400"
+                   placeholder="(XX) XXXXX-XXXX">
+        </div>
+        
+        <div>
+            <label for="email" class="block text-sm font-medium text-slate-700 mb-1">E-mail (Opcional):</label>
+            <input type="email" id="email" name="email"
+                   class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm placeholder-slate-400"
+                   placeholder="seuemail@exemplo.com">
+            <p class="mt-1 text-xs text-slate-500">Recomendado para receber confirmações.</p>
+        </div>
+
+        <button type="submit" id="submitButton"
+                class="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-md text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+            <i class="fas fa-credit-card mr-2"></i>
+            Prosseguir para Pagamento
+        </button>
+    </form>
+
+    {# Não precisamos mais do container do Brick #}
+    {# <div id="payment-brick-container" class="mt-8"></div> #}
+    <div id="paymentStatus" class="mt-6 text-center text-sm"></div>
+</div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+    const registrationForm = document.getElementById('registrationForm');
+    const submitButton = document.getElementById('submitButton');
+    const paymentStatusDiv = document.getElementById('paymentStatus');
+
+    registrationForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const originalButtonText = submitButton.innerHTML;
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Redirecionando para pagamento...';
+        paymentStatusDiv.innerHTML = '';
+
+        const name = document.getElementById('name').value;
+        const whatsapp = document.getElementById('whatsapp').value;
+        const email = document.getElementById('email').value;
+
+        if (!name || !whatsapp) {
+            paymentStatusDiv.innerHTML = `<p class="text-red-500 p-3 bg-red-100 rounded-md">Por favor, preencha seu nome e WhatsApp.</p>`;
+            submitButton.disabled = false;
+            submitButton.innerHTML = originalButtonText;
+            return;
+        }
+        
+        try {
+            const response = await fetch("{{ url_for('create_preference') }}", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, whatsapp, email })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Servidor retornou erro ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            if (data.checkout_url) {
+                // Redireciona o usuário para a URL de checkout do Mercado Pago
+                window.location.href = data.checkout_url;
+            } else {
+                throw new Error("URL de checkout não recebida do servidor.");
+            }
+
+        } catch (error) {
+            console.error("Erro ao criar preferência ou redirecionar:", error);
+            paymentStatusDiv.innerHTML = `<p class="text-red-600 p-3 bg-red-100 rounded-md shadow">Erro ao iniciar pagamento: ${error.message}. Tente novamente.</p>`;
+            submitButton.disabled = false;
+            submitButton.innerHTML = originalButtonText;
+        }
+    });
+</script>
+{% endblock %}

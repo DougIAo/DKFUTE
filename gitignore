@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-selfcheck.json
+*.egg-info/
+.env
+instance/
+# Não versionar o database.db de desenvolvimento local se for diferente do de produção
+# Se o database.db for INICIALIZADO no Render, não precisa estar no Git.
+# Se você tem dados iniciais que quer subir, pode versioná-lo UMA VEZ e depois removê-lo do Git.
+# Para este guia, vamos assumir que o DB será criado no Render.
+# database.db # Comente se quiser fazer um commit inicial com ele, depois descomente.
+*.sqlite3
