@@ -9,7 +9,7 @@
         animation: pulse-blue 2s infinite;
     }
     @keyframes pulse-blue {
-        0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.7); } /* Azul claro para brilho no escuro */
+        0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.7); } 
         50% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(96, 165, 250, 0); }
     }
 
@@ -18,7 +18,7 @@
         animation: pulse-green 2s infinite;
     }
     @keyframes pulse-green {
-        0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); } /* Verde claro para brilho no escuro */
+        0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); } 
         50% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); }
     }
 
@@ -30,23 +30,21 @@
     .animate-price-blink { animation: price-blink 1.2s infinite ease-in-out; display: inline-block; }
     @keyframes price-blink {
         0%, 100% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.7; transform: scale(1.1); } /* Aumenta e fica um pouco transparente */
+        50% { opacity: 0.7; transform: scale(1.1); } 
     }
 </style>
 {% endblock %}
 
 {% block content %}
-{# Wrapper principal para aplicar o fundo preto e cor de texto padrão clara para esta página #}
-<div class="bg-black text-slate-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-8 flex-grow"> 
-    {# Card centralizado com conteúdo principal #}
-    <div class="max-w-lg mx-auto bg-slate-800 p-6 sm:p-8 rounded-xl shadow-2xl shadow-blue-900/50"> 
+<div class="bg-gradient-to-b from-black via-slate-900 to-slate-800 text-slate-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-8 flex-grow"> 
+    <div class="max-w-lg mx-auto bg-slate-800/80 backdrop-blur-sm p-6 sm:p-8 rounded-xl shadow-2xl shadow-blue-900/50"> 
         <header class="text-center mb-6"> 
             <img src="{{ url_for('static', filename='img/sua_logo.png') }}" alt="DKFUTE Logo" 
                  class="h-24 w-auto mx-auto mb-3"> 
             
             <h1 class="text-3xl sm:text-4xl font-bold font-poppins text-slate-50">Futebol Ao Vivo!</h1>
             
-            <div class="mt-3 bg-slate-700/50 p-3 rounded-lg shadow-inner"> 
+            <div class="mt-3 bg-slate-700/60 backdrop-blur-sm p-3 rounded-lg shadow-inner"> 
                 <p class="text-md sm:text-lg text-slate-200 leading-relaxed">
                     Assista o jogo completo por apenas 
                     <span class="font-bold text-blue-400 animate-price-blink text-lg">R$ 3,00!</span>
@@ -96,7 +94,7 @@
         </form>
 
         <div class="mt-5 text-center">
-            <div class="bg-slate-700/70 border-l-4 border-blue-500 text-slate-200 p-3 rounded-md shadow" role="alert">
+            <div class="bg-slate-700/80 backdrop-blur-sm border-l-4 border-blue-500 text-slate-200 p-3 rounded-md shadow" role="alert">
                 <div class="flex items-center">
                     <div class="py-1"><i class="fas fa-bell text-lg text-blue-400 mr-2"></i></div>
                     <div><p class="font-semibold text-sm text-slate-100">Atenção:</p><p class="text-xs sm:text-sm">Assim que o Mercado Pago confirmar seu pagamento, o link para a transmissão será enviado para o número de WhatsApp cadastrado.</p></div>
@@ -105,8 +103,8 @@
         </div>
         <div id="paymentStatus" class="mt-3 text-center text-sm text-red-400"></div>
 
-        {# SEÇÃO PLANO MENSAL #}
-        <div class="mt-8 pt-5 border-t border-slate-700">
+        {# === SEÇÃO PLANO MENSAL (AGORA ANTES DAS AVALIAÇÕES) === #}
+        <div class="mt-12 pt-8 border-t border-slate-700">
             <h2 class="text-2xl font-bold font-poppins text-slate-100 text-center mb-8"><i class="fas fa-star text-yellow-400 mr-2"></i> Plano Mensal Torcedor <i class="fas fa-star text-yellow-400 ml-2"></i></h2>
             <div class="bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-800 p-1 rounded-xl shadow-2xl shadow-indigo-700/40 transform hover:scale-105 transition-transform duration-300 ease-in-out">
                 <div class="bg-slate-800 p-6 sm:p-8 rounded-lg relative overflow-hidden">
@@ -121,22 +119,23 @@
                 </div>
             </div>
         </div>
+        {# === FIM DA SEÇÃO PLANO MENSAL === #}
 
-        {# SEÇÃO DE AVALIAÇÕES #}
+        {# SEÇÃO DE AVALIAÇÕES (AGORA DEPOIS DO PLANO MENSAL) #}
         <div class="mt-10 pt-6 border-t border-slate-700">
             <h2 class="text-xl font-bold font-poppins text-slate-100 text-center mb-5">Nossos Clientes Satisfeitos</h2>
             <div class="space-y-4"> 
-                <div class="bg-slate-700 p-4 rounded-xl shadow-lg border-l-4 border-sky-500">
+                <div class="bg-slate-700/80 backdrop-blur-sm p-4 rounded-xl shadow-lg border-l-4 border-sky-500">
                     <div class="flex items-center mb-2"><i class="fas fa-user-circle text-3xl text-sky-400 mr-2"></i><div><h4 class="font-semibold text-slate-100 text-sm">Carlos A.</h4><p class="text-xs text-slate-400">Torcedor do Palmeiras</p></div></div>
                     <blockquote class="mb-2"><p class="text-slate-300 text-sm leading-relaxed italic"><span class="text-xl text-sky-400 font-serif leading-none mr-1">“</span>Qualidade ótima e preço justo. Vi o jogo do Verdão sem travar. Recomendo!<span class="text-xl text-sky-400 font-serif leading-none ml-1">”</span></p></blockquote>
                     <div class="flex items-center text-yellow-400 text-xs"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i><span class="ml-1.5 text-xs text-slate-400 font-medium">(4.9/5)</span></div>
                 </div>
-                <div class="bg-slate-700 p-4 rounded-xl shadow-lg border-l-4 border-emerald-500">
+                <div class="bg-slate-700/80 backdrop-blur-sm p-4 rounded-xl shadow-lg border-l-4 border-emerald-500">
                      <div class="flex items-center mb-2"><i class="fas fa-user-circle text-3xl text-emerald-400 mr-2"></i><div><h4 class="font-semibold text-slate-100 text-sm">Mariana L.</h4><p class="text-xs text-slate-400">Torcedora do Flamengo</p></div></div>
                     <blockquote class="mb-2"><p class="text-slate-300 text-sm leading-relaxed italic"><span class="text-xl text-emerald-400 font-serif leading-none mr-1">“</span>Fácil de comprar e acesso imediato. Perfeito para não perder nenhum lance do Mengão!<span class="text-xl text-emerald-400 font-serif leading-none ml-1">”</span></p></blockquote>
                     <div class="flex items-center text-yellow-400 text-xs"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><span class="ml-1.5 text-xs text-slate-400 font-medium">(5.0/5)</span></div>
                 </div>
-                <div class="bg-slate-700 p-4 rounded-xl shadow-lg border-l-4 border-violet-500">
+                <div class="bg-slate-700/80 backdrop-blur-sm p-4 rounded-xl shadow-lg border-l-4 border-violet-500">
                     <div class="flex items-center mb-2"><i class="fas fa-user-circle text-3xl text-violet-400 mr-2"></i><div><h4 class="font-semibold text-slate-100 text-sm">Fernando C.</h4><p class="text-xs text-slate-400">Torcedor do Corinthians</p></div></div>
                     <blockquote class="mb-2"><p class="text-slate-300 text-sm leading-relaxed italic"><span class="text-xl text-violet-400 font-serif leading-none mr-1">“</span>Plataforma show! Atendimento rápido e eficiente. Valeu cada centavo pra ver o Timão!<span class="text-xl text-violet-400 font-serif leading-none ml-1">”</span></p></blockquote>
                     <div class="flex items-center text-yellow-400 text-xs"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i><span class="ml-1.5 text-xs text-slate-400 font-medium">(4.0/5)</span></div>
@@ -176,7 +175,7 @@
             if (!time_torce) errors.push("Time que torce");
 
             if (errors.length > 0) {
-                if(paymentStatusDiv) paymentStatusDiv.innerHTML = `<p class="text-red-400 p-3 bg-red-900/50 border border-red-700 rounded-md">Por favor, preencha: ${errors.join(', ')}.</p>`; // Ajustado para dark mode
+                if(paymentStatusDiv) paymentStatusDiv.innerHTML = `<p class="text-red-400 p-3 bg-red-900/50 border border-red-700 rounded-md">Por favor, preencha: ${errors.join(', ')}.</p>`;
                 submitButton.disabled = false;
                 submitButton.innerHTML = originalButtonContent; 
                 submitButton.className = originalButtonClasses; 
@@ -201,7 +200,7 @@
                 }
             } catch (error) {
                 console.error("Erro ao criar preferência ou redirecionar:", error);
-                if(paymentStatusDiv) paymentStatusDiv.innerHTML = `<p class="text-red-300 p-3 bg-red-700/40 border border-red-600 rounded-md shadow">Erro: ${error.message}. Tente novamente.</p>`; // Ajustado para dark mode
+                if(paymentStatusDiv) paymentStatusDiv.innerHTML = `<p class="text-red-300 p-3 bg-red-700/40 border border-red-600 rounded-md shadow">Erro: ${error.message}. Tente novamente.</p>`;
                 submitButton.disabled = false;
                 submitButton.innerHTML = originalButtonContent; 
                 submitButton.className = originalButtonClasses; 
